@@ -12,7 +12,7 @@ def main():
 		line=line[:-2]
 		line_set.add(line+"\n")
 	line_set.remove("0")
-	w = open("noduplicateskddcup.csv", "a")
+	w = open("../data/noduplicateskddcup.csv", "a")
 	for i in line_set:
 		w.write(i)
 
