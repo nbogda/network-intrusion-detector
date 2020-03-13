@@ -14,13 +14,13 @@ def main():
 
     # converts every row in the train data to a string, then adds it to a set
     # if the same string row already exists in the set, then it will not be added
-    f=open("../data/train_data","r")
+    f=open("../data/test_data","r")
     line_set={"0"}
     while True:
         line=f.readline()
         if line =="":
             break
-        line=line[:-2]
+        line=line[:-2]  #YO I THINK THIS SHOULD BE -1 NOT -2!!*******
         line_set.add(line)
     line_set.remove("0")
     
@@ -37,7 +37,7 @@ def main():
     list_data = pd.DataFrame(list_data)
     enc = OrdinalEncoder()
     list_data.iloc[:,1:4] = enc.fit_transform(list_data.iloc[:,1:4])
-    list_data.to_csv("../data/train_nodup.csv",index=False)  
+    list_data.to_csv("../data/test_nodup.csv",index=False)  
 
 if __name__ == "__main__":
     exit(main())
