@@ -11,11 +11,12 @@ And what Jantz says, goes.
 import os
 import pandas as pd
 import numpy as np
-from sklearn.cluster import KMeans
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler 
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
+from sklearn import metrics
 
 def split_train_test(data, pca=False):
     '''
@@ -81,14 +82,15 @@ def pca_data(X):
     X = pca.fit_transform(X)
     return X
             
+#def choose_k(X_train, y_train, X_test, y_test):
 
 def main():
 
     # assume that if x_train doesn't exist, then none of the sets exist
     pca = True
     if (not os.path.exists('x_train.npy') and not pca) or (not os.path.exists("X_train_PCA.npy") and pca):
-    	data = pd.read_csv('../data/train_nodup.csv')
-    	X_train, X_test, y_train, y_test = split_train_test(data, pca=pca)
+        data = pd.read_csv('../data/train_nodup.csv')
+        X_train, X_test, y_train, y_test = split_train_test(data, pca=pca)
         print("Transformed data")
     else:
         desc = ""
@@ -100,9 +102,10 @@ def main():
         y_test = np.load("y_test%s.npy" % desc)
         print("Loaded in data")
 
-    
-
-    
+    knn = KNeighborsClassifier(n_neighbors=4)
+    knn.fit(X_train, y_train)
+    y_pred = knn.predict(X_test)
+    print(metrics.accuracy_score(y_test, y_pred))
 
 
 if __name__ == "__main__":
