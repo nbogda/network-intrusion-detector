@@ -17,6 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from sklearn import metrics
+import sys
 
 def split_train_test(data, pca=False):
     '''
@@ -82,10 +83,46 @@ def pca_data(X):
     X = pca.fit_transform(X)
     return X
             
-#def choose_k(X_train, y_train, X_test, y_test):
+# prefer to use the F1 score with weighted average to account for label imbalance
+# F1 score is between 0 and 1. The closer to 1, the better.
+def choose_k(X_train, y_train, X_test, y_test):
+    max_f1_score = -1
+    best_knn = None
+    f1_scores = []
+
+    k_range = np.arange(1, 15)
+    for k in k_range:
+        print("On k=%d" % k)
+        knn = KNeighborsClassifier(n_neighbors=k)
+        knn.fit(X_train, y_train)
+        y_pred = knn.predict(X_test)
+        f1_score = metrics.f1_score(y_test, y_pred, average='weighted')
+        f1_scores.append(f1_score)
+        if f1_score > max_f1_score:
+            max_f1_score = f1_score
+            best_knn = knn
+
+    # plottin' our k's
+    fig = plt.figure(figsize=((15, 10)))
+    plt.plot(k_range, f1_scores, marker='o')
+    plt.title("kNN - F1 Score vs k")
+    plt.xlabel("k")
+    plt.ylabel("F1 Score")
+    plt.savefig("graphs/kNN_k_selection.png")
+
+    return f1_scores.index(max(f1_scores)) + 1, max(f1_scores), best_knn
+
+
+# making a fancy confusion matrix
+def show_results_with_best_k(k, f1, X_test, y_test, knn):
+    cm = metrics.plot_confusion_matrix(knn, X_test[0:10], y_test[0:10], display_labels=list(set(y_test)), xticks_rotation='vertical', cmap=plt.cm.Greens, normalize='true').gcf()
+    cm.ax_.set_title("Confusion matrix for kNN k=%d, F1 Score = %.4f" % (k, f1))
+    # FOR THE LOVE OF GOD HOW DO YOU MAKE THIS BIGGER
+    cm.ax_.set_figheight(20)
+    cm.ax_.set_figwidth(20)
+    plt.savefig("graphs/knn_confusion_matrix.png")
 
 def main():
-
     # assume that if x_train doesn't exist, then none of the sets exist
     pca = True
     if (not os.path.exists('x_train.npy') and not pca) or (not os.path.exists("X_train_PCA.npy") and pca):
@@ -102,10 +139,15 @@ def main():
         y_test = np.load("y_test%s.npy" % desc)
         print("Loaded in data")
 
-    knn = KNeighborsClassifier(n_neighbors=4)
+    # returns best k and its f1 score
+    k, f1, knn = choose_k(X_train, y_train, X_test, y_test)
+    
+    sys.exit(0)
+    k = 1
+    f1 = 0.9995
+    knn = KNeighborsClassifier(n_neighbors=k)
     knn.fit(X_train, y_train)
-    y_pred = knn.predict(X_test)
-    print(metrics.accuracy_score(y_test, y_pred))
+    show_results_with_best_k(k, f1, X_test, y_test, knn)
 
 
 if __name__ == "__main__":
