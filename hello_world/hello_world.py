@@ -126,13 +126,13 @@ def show_results_with_best_k(k, f1, X_test, y_test, knn):
     cm = metrics.confusion_matrix(y_test, y_pred)
     cm = cm.astype('float')/cm.sum(axis=1)[:, np.newaxis]
 
-    fig, ax = plt.subplots(figsize=(25, 15))
+    fig, ax = plt.subplots(figsize=(17, 15))
     sn.heatmap(cm, annot=True, ax=ax, fmt='.3f', cmap='Greens', linewidths=0.25, linecolor='black')
-    ax.set_xlabel('Predicted Labels')
-    ax.set_ylabel('True Labels')
-    ax.set_title("Confusion matrix for kNN k=%d, F1 Score = %.4f" % (k, f1))
-    ax.xaxis.set_ticklabels(labels, rotation='vertical', fontsize='small')
-    ax.yaxis.set_ticklabels(labels, rotation='horizontal', fontsize='small')
+    ax.set_xlabel('Predicted Labels', fontsize='large')
+    ax.set_ylabel('True Labels', fontsize='large')
+    ax.set_title("Confusion matrix for kNN k=%d, F1 Score = %.4f" % (k, f1), fontsize='large')
+    ax.xaxis.set_ticklabels(labels, rotation='vertical', fontsize='large')
+    ax.yaxis.set_ticklabels(labels, rotation='horizontal', fontsize='large')
     plt.savefig("graphs/knn_confusion_matrix.png")
 
 def main():
@@ -153,15 +153,14 @@ def main():
         print("Loaded in data")
 
     # returns best k and its f1 score
-    k, f1, knn = choose_k(X_train, y_train, X_test, y_test)
+    # k, f1, knn = choose_k(X_train, y_train, X_test, y_test)
    
-    '''
+    
     k = 1
     f1 = 0.9995
     knn = KNeighborsClassifier(n_neighbors=k)
     knn.fit(X_train, y_train)
     show_results_with_best_k(k, f1, X_test, y_test, knn)
-    '''
 
 
 if __name__ == "__main__":
