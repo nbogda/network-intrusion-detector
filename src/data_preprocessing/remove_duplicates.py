@@ -16,22 +16,22 @@ def float_cast(item):
 def count_plot(labels):
     label_dict = {}
     for l in labels:
-        if l == 'normal' or l == 'neptune':
-            continue
+        # if l == 'normal' or l == 'neptune':
+        #    continue
         if l not in label_dict:
             label_dict[l] = 1
         else:
             label_dict[l] += 1
     label_dict = OrderedDict(sorted(label_dict.items(), key=itemgetter(1), reverse=True))
-    fig = plt.figure(figsize=(14, 11))
+    fig = plt.figure(figsize=(14, 14))
     plt.bar(label_dict.keys(), label_dict.values())
-    plt.xticks(rotation=90)
-    plt.title("Distribution of Attacks Without Neptune")
-    plt.savefig("../graphs/attacks_without_neptune.png")
+    plt.xticks(rotation=90, fontsize='large')
+    # plt.title("Distribution of Attacks Without Neptune")
+    # plt.savefig("../graphs/attacks_without_neptune.png")
     # plt.title("Distribution of Attacks Only")
     # plt.savefig("../graphs/attacks_only.png")
-    # plt.title("Distribution of Samples")
-    # plt.savefig("../graphs/all_samples.png")
+    plt.title("Distribution of Samples", fontsize='large')
+    plt.savefig("../graphs/all_samples.png", bbox='tight_layout')
 
 
 def main():
