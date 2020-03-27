@@ -90,8 +90,9 @@ def choose_k(X_train, y_train, X_test, y_test):
     max_f1_score = -1
     best_knn = None
     f1_scores = []
-
     k_range = np.arange(1, 15)
+
+    '''
     for k in k_range:
         print("On k=%d" % k)
         knn = KNeighborsClassifier(n_neighbors=k)
@@ -104,16 +105,18 @@ def choose_k(X_train, y_train, X_test, y_test):
             best_knn = knn
 
     np.save("f1_scores.npy", f1_scores)
+    '''
 
+    f1_scores = np.load("f1_scores.npy")
     # plottin' our k's
-    fig = plt.figure(figsize=((10, 5)))
+    fig = plt.figure(figsize=((9, 5)))
     plt.plot(k_range, f1_scores, marker='o')
-    plt.title("kNN - F1 Score vs k")
-    plt.xlabel("k")
-    plt.ylabel("F1 Score")
+    plt.title("kNN - F1 Score vs k", fontsize='large')
+    plt.xlabel("k", fontsize='large')
+    plt.ylabel("F1 Score", fontsize='large')
     plt.savefig("graphs/kNN_k_selection.png")
 
-    return f1_scores.index(max(f1_scores)) + 1, max(f1_scores), best_knn
+    # return f1_scores.index(max(f1_scores)) + 1, max(f1_scores), best_knn
 
 
 # making a fancy confusion matrix
@@ -153,15 +156,15 @@ def main():
         print("Loaded in data")
 
     # returns best k and its f1 score
-    # k, f1, knn = choose_k(X_train, y_train, X_test, y_test)
+    k, f1, knn = choose_k(X_train, y_train, X_test, y_test)
    
-    
+    ''' 
     k = 1
     f1 = 0.9995
     knn = KNeighborsClassifier(n_neighbors=k)
     knn.fit(X_train, y_train)
     show_results_with_best_k(k, f1, X_test, y_test, knn)
-
+    '''
 
 if __name__ == "__main__":
     main()
