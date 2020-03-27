@@ -23,14 +23,15 @@ def count_plot(labels):
         else:
             label_dict[l] += 1
     label_dict = OrderedDict(sorted(label_dict.items(), key=itemgetter(1), reverse=True))
-    fig = plt.figure(figsize=(14, 14))
+    fig = plt.figure(figsize=(14, 16))
     plt.bar(label_dict.keys(), label_dict.values())
-    plt.xticks(rotation=90, fontsize='large')
+    plt.xticks(rotation=90, fontsize=15)
+    plt.yticks(fontsize=15)
     # plt.title("Distribution of Attacks Without Neptune")
     # plt.savefig("../graphs/attacks_without_neptune.png")
     # plt.title("Distribution of Attacks Only")
     # plt.savefig("../graphs/attacks_only.png")
-    plt.title("Distribution of Samples", fontsize='large')
+    plt.title("Distribution of Samples", fontsize=15)
     plt.savefig("../graphs/all_samples.png", bbox='tight_layout')
 
 
