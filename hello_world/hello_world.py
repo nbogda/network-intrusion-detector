@@ -122,7 +122,7 @@ def choose_k(X_train, y_train, X_test, y_test):
 # making a fancy confusion matrix
 def show_results_with_best_k(k, f1, X_test, y_test, knn):
     
-    labels = list(set(y_test))
+    labels = np.unique(y_test)
     y_pred = knn.predict(X_test)
 
     # get confusion matrix and normalize it
@@ -136,6 +136,7 @@ def show_results_with_best_k(k, f1, X_test, y_test, knn):
     ax.set_title("Confusion matrix for kNN k=%d, F1 Score = %.4f" % (k, f1), fontsize='large')
     ax.xaxis.set_ticklabels(labels, rotation='vertical', fontsize='large')
     ax.yaxis.set_ticklabels(labels, rotation='horizontal', fontsize='large')
+    # plt.show()
     plt.savefig("graphs/knn_confusion_matrix.png")
 
 def main():
@@ -156,15 +157,15 @@ def main():
         print("Loaded in data")
 
     # returns best k and its f1 score
-    k, f1, knn = choose_k(X_train, y_train, X_test, y_test)
+    # k, f1, knn = choose_k(X_train, y_train, X_test, y_test)
    
-    ''' 
+     
     k = 1
     f1 = 0.9995
     knn = KNeighborsClassifier(n_neighbors=k)
     knn.fit(X_train, y_train)
     show_results_with_best_k(k, f1, X_test, y_test, knn)
-    '''
+    
 
 if __name__ == "__main__":
     main()
