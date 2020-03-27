@@ -65,7 +65,7 @@ def pca_data(X):
     plt.savefig("graphs/principal_comp_.png")
 
     #select what percent var to keep
-    desired_var = 0.9
+    desired_var = 0.9  # try out different values for this, make graph
     #select how many eigenvalues to keep
     cumsum = np.cumsum(explained_variance)
     k = np.argwhere(cumsum > desired_var)[0]
@@ -103,8 +103,10 @@ def choose_k(X_train, y_train, X_test, y_test):
             max_f1_score = f1_score
             best_knn = knn
 
+    np.save("f1_scores.npy", f1_scores)
+
     # plottin' our k's
-    fig = plt.figure(figsize=((15, 10)))
+    fig = plt.figure(figsize=((10, 5)))
     plt.plot(k_range, f1_scores, marker='o')
     plt.title("kNN - F1 Score vs k")
     plt.xlabel("k")
@@ -151,13 +153,15 @@ def main():
         print("Loaded in data")
 
     # returns best k and its f1 score
-    # k, f1, knn = choose_k(X_train, y_train, X_test, y_test)
-    
+    k, f1, knn = choose_k(X_train, y_train, X_test, y_test)
+   
+    '''
     k = 1
     f1 = 0.9995
     knn = KNeighborsClassifier(n_neighbors=k)
     knn.fit(X_train, y_train)
     show_results_with_best_k(k, f1, X_test, y_test, knn)
+    '''
 
 
 if __name__ == "__main__":
