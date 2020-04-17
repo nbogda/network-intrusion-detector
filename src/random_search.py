@@ -29,6 +29,7 @@ jobs = {1:['kNN'], 2:['MLP'], 3:['Decision Tree'], 4:['SGD Classifier'], 5:['Ran
 #function to read in the CSV files
 def read_CSV():
 
+    #Make more like train_test_split() in the jupyter-notebook
     train = pd.read_csv("../../data/train_data.csv")
     #Maybe write out to .npy files?? idk
  
@@ -50,7 +51,7 @@ def get_params(algorithm):
     returns dict of params
     '''
     if algorithm == "kNN":
-        return { 'n_neighbors' : np.arange(1, 100, 5),
+        return { 'n_neighbors' : [1,11,25,69],
                  'p' : [1, 2, 3] } #different orders of minkowski distance. 1=manhattan, 2=euclidean
     elif algorithm == "MLP": 
         hidden_layers = MLP_structure()
@@ -175,11 +176,11 @@ if __name__ == "__main__":
                 - Random Forest
                 - Naive-Bayes
     '''
-    algorithm = jobs[jobNo][0]   #"MLP"
+    algorithm = jobs[jobNo]   #"MLP"
     
     #this is where the params to test are stored
     param_dict = get_params(algorithm)
 
     #this where the actual searching happens
-    random_search_(algorithm, param_dict, X, y, iters=100, jobs=45)
+    random_search_(algorithm, param_dict, X, y, iters=100, jobs=30)
    # print("Testing search with job params. Alg: %s, Clean Method: %d, Preprocessing: %d" %(jobs[jobNo][0],jobs[jobNo][1],jobs[jobNo][2]))
