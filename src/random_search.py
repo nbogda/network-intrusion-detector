@@ -6,6 +6,7 @@ import os
 import random as rand
 import sys
 import collections
+import joblib
 from sklearn.model_selection import cross_val_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import SGDClassifier
@@ -15,7 +16,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.externals import joblib
 from itertools import combinations, combinations_with_replacement
 from sklearn.metrics import make_scorer, f1_score
 from sklearn.preprocessing import StandardScaler 
@@ -23,24 +23,21 @@ from sklearn.preprocessing import StandardScaler
 
 
 #Nasty lil dictionary used to determine which node will run which parmiganna combination
-jobs = {1:['kNN'], 2:['MLP'], 3:['Decision Tree'], 4:['SGD Classifier'], 5:['Random Forest'], 6:['Naive-Bayes']}
+jobs = {1:'kNN', 2:'MLP', 3:'Decision_Tree', 4:'SGD_Classifier', 5:'Random_Forest', 6:'Naive-Bayes'}
 
 
 #function to read in the CSV files
-def read_CSV():
+def read_npy():
+    '''
+    I chose to preprocess the data and write it to .npy files so that I wouldn't have
+    to do so while this program runs.
+    '''
 
-    #Make more like train_test_split() in the jupyter-notebook
-    train = pd.read_csv("../../data/train_data.csv")
-    #Maybe write out to .npy files?? idk
- 
     #split data into predictions and predictors
-    X = [] #predictors training
-    y = [] #predictions training
+    X = np.load("../data/X_train_PCA.npy")
+    y = np.load("../data/y_train_PCA.npy")
 
-    X = np.array(train.iloc[:,:-1].values.tolist())
-    X = StandardScaler().fit_transform(X)  # mean of ~0 and variance of 1
-    # convert last column to list for labels
-    y = np.array(train.iloc[:,-1].values.tolist())
+
      
     return X, y
 
@@ -60,15 +57,15 @@ def get_params(algorithm):
                  'learning_rate_init' : [0.001, 0.01, 0.1, 1, 5],
                  'batch_size' : [1, 10, 30, 200],
                  'activation' : ['logistic', 'relu', 'tanh']}
-    elif algorithm == "Decision Tree":
+    elif algorithm == "Decision_Tree":
         return { 'criterion' : ["mse", "friedman_mse", "mae"],
                  'min_samples_split' : [2, 4, 6, 8],
                  'min_samples_leaf' : [1, 2, 3, 4],
                  'max_features' : ["auto", "sqrt", "log2"] }
-    elif algorithm == "SGD Classifier":
+    elif algorithm == "SGD_Classifier":
         return { 'max_iter' : [100,1000,10000],
                  'alpha' : [0.0001,0.001,0.01,0.1] }
-    elif algorithm == "Random Forest":
+    elif algorithm == "Random_Forest":
         return { 'n_estimators' : [10, 50, 100, 200],
                  'criterion' : ["mse", "friedman_mse", "mae"],
                  'min_samples_split' : [2, 4, 6, 8],
@@ -112,11 +109,11 @@ def random_search_(algorithm, params, X, y, iters=20, jobs=5):
     elif algorithm == "MLP":
         #closest to what we did in class
         clf = MLPClassifier(solver="sgd")
-    elif algorithm == "Decision Tree":
+    elif algorithm == "Decision_Tree":
         clf = DecisionTreeClassifier()
-    elif algorithm == "SGD Classifier":
+    elif algorithm == "SGD_Classifier":
         clf = SGDClassifier()
-    elif algorithm == "Random Forest":
+    elif algorithm == "Random_Forest":
         clf = RandomForestClassifier()
     elif algorithm == "Naive-Bayes":
         clf = GaussianNB()
@@ -125,6 +122,7 @@ def random_search_(algorithm, params, X, y, iters=20, jobs=5):
     custom_neg_MSLE = make_scorer(custom_scorer)
     random_search = RandomizedSearchCV(clf, param_distributions=params, n_iter=iters, n_jobs=jobs, 
                                        scoring=custom_neg_MSLE, refit=True, verbose=2,cv=10)
+
     random_search.fit(X, y)
     #report(random_search.cv_results_)
     
@@ -165,15 +163,15 @@ if __name__ == "__main__":
     jobNo = int(sys.argv[1])     #For cluster
 
     #read data from one of 6 datasets
-    X, y = read_CSV()
+    X, y = read_npy()
 
     '''
     algorithm : string
                 - kNN
                 - MLP
-                - Decision Tree
-                - SGD Classifier  
-                - Random Forest
+                - Decision_Tree
+                - SGD_Classifier  
+                - Random_Forest
                 - Naive-Bayes
     '''
     algorithm = jobs[jobNo]   #"MLP"
@@ -182,5 +180,5 @@ if __name__ == "__main__":
     param_dict = get_params(algorithm)
 
     #this where the actual searching happens
-    random_search_(algorithm, param_dict, X, y, iters=100, jobs=30)
+    random_search_(algorithm, param_dict, X, y, iters=2, jobs=5) #100, 30
    # print("Testing search with job params. Alg: %s, Clean Method: %d, Preprocessing: %d" %(jobs[jobNo][0],jobs[jobNo][1],jobs[jobNo][2]))
