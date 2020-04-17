@@ -65,12 +65,10 @@ def get_params(algorithm):
                  'min_samples_leaf' : [1, 2, 3, 4],
                  'max_features' : ["auto", "sqrt", "log2"] }
     elif algorithm == "SGD Classifier":
-        return { 'estimator__kernel' : ['rbf', 'sigmoid', 'poly'],
-                 'estimator__gamma' : ['scale', 'auto'],
-                 'estimator__C' : [0.1, 1, 5, 10],
-                 'estimator__epsilon' : [0.1, 1, 5, 10] }
+        return { 'max_iter' : [100,1000,10000],
+                 'alpha' : [0.0001,0.001,0.01,0.1] }
     elif algorithm == "Random Forest":
-        return { 'n_estimators' : [10, 50, 100, 200, 500],
+        return { 'n_estimators' : [10, 50, 100, 200],
                  'criterion' : ["mse", "friedman_mse", "mae"],
                  'min_samples_split' : [2, 4, 6, 8],
                  'min_samples_leaf' : [1, 2, 3, 4],
