@@ -15,4 +15,3 @@ xterm
 udpstorm
 sqlattack
 worm
-
