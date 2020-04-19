@@ -24,18 +24,18 @@ def generate_rs_graphs(metric, rf=True):
     random_search_info = pd.read_csv("param_search/saved_models/Random_Search_Info.csv", index_col=0)
    
     #to exclude or not to exclude random forest? 
-    N = 5
-    algorithms = ["kNN", "MLP", "Decision Tree", "SVM", "Random Forest"]
+    N = 6
+    algorithms = ["kNN", "MLP", "Decision_Tree", "SGD_Classifier", "Random_Forest","Naive-Bayes"]
     if metric == "Refit Time" and not rf:
-        algorithms = ["kNN", "MLP", "Decision Tree", "SVM"]
-        N = 4
+        algorithms = ["kNN", "MLP", "Decision_Tree", "SGD_Classifier","Naive-Bayes"]]
+        N = 5
    
     #make arrays to hold info for the 6 datasets
     bar_values = [None] * N
     for index, row in random_search_info.iterrows():
         #regex search for algorithm name in pandas file
         name = re.search("Best (.*) [^\s]+ [^\s]+", row.name).group(1)
-        if not rf and name == "Random Forest":
+        if not rf and name == "Random_Forest":
             continue
         #add data to appropriate index
         bv_index = algorithms.index(name)

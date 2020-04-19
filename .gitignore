@@ -4,3 +4,4 @@ train_nodup.csv
 test_nodup.csv
 *.npy
 *.DS_STORE
+!bonus_attacks.csv
