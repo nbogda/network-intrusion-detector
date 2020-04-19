@@ -58,7 +58,7 @@ def get_params(algorithm):
                  'batch_size' : [1, 10, 30, 200],
                  'activation' : ['logistic', 'relu', 'tanh']}
     elif algorithm == "Decision_Tree":
-        return { 'criterion' : ["mse", "friedman_mse", "mae"],
+        return { 'criterion' : ["gini", "entropy"],
                  'min_samples_split' : [2, 4, 6, 8],
                  'min_samples_leaf' : [1, 2, 3, 4],
                  'max_features' : ["auto", "sqrt", "log2"] }
@@ -67,7 +67,7 @@ def get_params(algorithm):
                  'alpha' : [0.0001,0.001,0.01,0.1] }
     elif algorithm == "Random_Forest":
         return { 'n_estimators' : [10, 50, 100, 200],
-                 'criterion' : ["mse", "friedman_mse", "mae"],
+                 'criterion' : ["gini","entropy"],
                  'min_samples_split' : [2, 4, 6, 8],
                  'min_samples_leaf' : [1, 2, 3, 4],
                  'max_features' : ["auto", "sqrt", "log2"] }
@@ -124,7 +124,7 @@ def random_search_(algorithm, params, X, y, iters=20, jobs=5):
                                        scoring=custom_neg_MSLE, refit=True, verbose=2,cv=10)
 
     random_search.fit(X, y)
-    #report(random_search.cv_results_)
+#    report(random_search.cv_results_)
     
     #save the model
     best_estimator = random_search.best_estimator_
@@ -180,5 +180,5 @@ if __name__ == "__main__":
     param_dict = get_params(algorithm)
 
     #this where the actual searching happens
-    random_search_(algorithm, param_dict, X, y, iters=2, jobs=5) #100, 30
+    random_search_(algorithm, param_dict, X, y, iters=1, jobs=5) #100, 30
    # print("Testing search with job params. Alg: %s, Clean Method: %d, Preprocessing: %d" %(jobs[jobNo][0],jobs[jobNo][1],jobs[jobNo][2]))
