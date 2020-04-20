@@ -7,7 +7,7 @@ import sys
 import joblib
 import matplotlib.pyplot as plt
 import re
-from sklearn.metrics import mean_squared_log_error
+from sklearn.metrics import f1_score
 import time
 
 
@@ -27,7 +27,7 @@ def generate_rs_graphs(metric, rf=True):
     N = 6
     algorithms = ["kNN", "MLP", "Decision_Tree", "SGD_Classifier", "Random_Forest","Naive-Bayes"]
     if metric == "Refit Time" and not rf:
-        algorithms = ["kNN", "MLP", "Decision_Tree", "SGD_Classifier","Naive-Bayes"]]
+        algorithms = ["kNN", "MLP", "Decision_Tree", "SGD_Classifier","Naive-Bayes"]
         N = 5
    
     #make arrays to hold info for the 6 datasets
@@ -131,46 +131,37 @@ def generate_model_graphs(metric, lr=True):
         title += " without Linear Regression"
     ax.set_title("Test Set Best Algorithm %s" % title, fontsize=14)
     plt.savefig("graphs/test_set_best_alg_%s" % title)
-    
-def load_test_data(clean_method, preprocessing):
 
-    test = pd.read_csv("../data/NAN_%s/%s_split_data_test.csv" % (clean_method, preprocessing))
-    #split data into predictions and predictors
-    X = [] #predictors training
-    y = [] #predictions training
+################################################### Used to TEST models #############
 
-    for index, row in test.iterrows():
-        y.append(list(row.iloc[1:13]))
-        X.append(list(row.iloc[13:]))
+def load_test_data():
+
+    X = np.load("../data/X_test_PCA.npy")
+    y = np.load("../data/y_test_PCA.npy")
+
     return X, y
 
 def eval(y_test, y_pred):
-
-    multiple_err = np.sqrt(mean_squared_log_error(y_test, y_pred, multioutput='raw_values'))
-    overall_err = np.sqrt(mean_squared_log_error(y_test, y_pred))
-    return multiple_err, overall_err
+    score = f1_score(y_test, y_pred, average='weighted')
+    return score
 
 #to make the skeleton
 def make_report():
 
-    file_paths = ["deleted", "mean", "to_0"]
-    file_names = ["ORIGINAL", "PCA"]
-    algorithms = ["kNN", "MLP", "Decision Tree", "SVM", "Random Forest"]
+    algorithms = ["kNN", "MLP", "Decision_Tree", "SGD_Classifier", "Random_Forest","Naive-Bayes"]
     row_names = []
     for a in algorithms:
-        for n in file_names:
-            for p in file_paths:
-                name = "Best %s %s %s" % (a, n, p)
-                row_names.append(name)
-    col_names = ["Mean RMSLE", "Prediction Time"]
-    col_names += ["RMSLE Month %d" % i for i in range(1, 13)]
+        name = "Best %s " % (a)
+        row_names.append(name)
+    col_names = ["Mean F1-Score", "Prediction Time"]
+    #col_names += ["RMSLE Month %d" % i for i in range(1, 13)]  TODO: Maybe use this for F1-Score for binary??
     df = pd.DataFrame(None, index=[row_names], columns=col_names)
     return(df)
 
 #DO NOT RUN THIS AGAIN OR YOU'LL BE SORRY
 def test_best_algs():
         
-    algorithms = ["kNN", "MLP", "Decision Tree", "SVM", "Random Forest","linearRegression"]
+    algorithms = ["kNN", "MLP", "Decision_Tree", "SGD_Classifier", "Random_Forest","Naive-Bayes"]
     report = make_report()
 
     bar_values = [None] * len(algorithms)
@@ -180,23 +171,26 @@ def test_best_algs():
             if name.endswith(".joblib"):
                 #regex search for info from file name
                 info = re.findall("(?<=_)([^_]+)(?=_)", name)
-                clean_method = re.search(".*_(.*).joblib", name).group(1)
+                                #clean_method = re.search(".*_(.*).joblib", name).group(1)
                 alg_name = info[0]
-                preprocess = info[1]
-                if clean_method == "0": clean_method = "to_0"
+                                #preprocess = info[1]
+                                #if clean_method == "0": clean_method = "to_0"
                 clf = joblib.load(models_path + name) 
-                X, y = load_test_data(clean_method, preprocess)
+                X, y = load_test_data()
                 print("Loaded %s%s" %(models_path,name))
+
+                #MAYBE HAVE THIS PREDICT NORMAL BUT THEN ALSO BINARY!!
+
                 start_time = time.time()
                 y_pred = clf.predict(X)
                 end_time = time.time() - start_time
-                multiple, overall = eval(y, np.abs(y_pred)) #ugh
-                report.loc["Best %s %s %s" % (alg_name, preprocess, clean_method), "Mean RMSLE"] = "%.6f" % overall 
-                report.loc["Best %s %s %s" % (alg_name, preprocess, clean_method), "Prediction Time"] = "%.10f" % end_time
-                for i in range(0, len(multiple)):
-                    report.loc["Best %s %s %s" % (alg_name, preprocess, clean_method), "RMSLE Month %s" % str(i + 1)] = "%.6f" % multiple[i]
+                overall = eval(y, y_pred)
+                report.loc["Best %s" % (alg_name), "Mean F1-Score"] = "%.6f" % overall 
+                report.loc["Best %s" % (alg_name), "Prediction Time"] = "%.10f" % end_time
+                                #for i in range(0, len(multiple)):
+                                    #report.loc["Best %s %s %s" % (alg_name, preprocess, clean_method), "RMSLE Month %s" % str(i + 1)] = "%.6f" % multiple[i]
     report.to_csv("graphs/Best_Model_Info.csv")
-    
+#################################    
 
 if __name__ == "__main__":
 
@@ -204,9 +198,9 @@ if __name__ == "__main__":
     #metric = "Mean RMSLE"
     
     #generate_rs_graphs(metric)
-    #test_best_algs()
+    test_best_algs()
 
     #Mean RMSLE or Prediction Time
-    metric = "Mean RMSLE"
-    generate_model_graphs(metric, lr=False)
+    #metric = "Mean RMSLE"
+    #generate_model_graphs(metric, lr=False)
 
