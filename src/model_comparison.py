@@ -154,9 +154,10 @@ def load_test_data():
 
 def eval(y_test, y_pred):
     overall_f1_score = f1_score(y_test, y_pred, average='weighted')
-    report = classification_report(y_test,y_pred,target_names=test_labels,output_dict=True)
+    report = classification_report(y_test,y_pred,labels=test_labels,output_dict=True)
     #binary_overall_f1_score = f1_score(y_test, y_pred, average='binary',pos_label='normal')
-
+    if("accuracy" in report.keys()):
+        report.pop("accuracy")
     #DEBUGGING######
     #print(report)
     #######DEBUGGING#####
@@ -179,8 +180,13 @@ def eval(y_test, y_pred):
         print("BINARY NPY ARRAYS SHOULD BE SAME LENGTH!!")
         sys.exit() 
 
+#    print("y_test_binary: %d   y_pred_binary: %d" % (len(y_test_binary),len(y_pred_binary)))
+
     overall_binary_f1_score = f1_score(y_test_binary, y_pred_binary, average='weighted')
     binary_report = classification_report(y_test_binary,y_pred_binary,labels=["normal","attack"],output_dict=True)
+
+    if("accuracy" in binary_report.keys()):
+        binary_report.pop("accuracy")
 
     y_test_subgroup = []
     y_pred_subgroup = []
@@ -195,6 +201,8 @@ def eval(y_test, y_pred):
             y_test_subgroup.append("u2r")
         elif elem in subAttacks["probe"]:
             y_test_subgroup.append("probe")
+        else:
+            y_test_subgroup.append("other")
 
     for elem in y_pred:
         if elem == "normal":
@@ -207,15 +215,20 @@ def eval(y_test, y_pred):
             y_pred_subgroup.append("u2r")
         elif elem in subAttacks["probe"]:
             y_pred_subgroup.append("probe")
+        else:
+            y_pred_subgroup.append("other")
 
     #Sanity check
     if(len(y_pred_subgroup) != len(y_test_subgroup)):
-        print("SUBGROUP NPY ARRAYS SHOULD BE SAME LENGTH!!")
+        print("SUBGROUP NPY ARRAYS SHOULD BE SAME LENGTH!! y_test: %d  y_pred: %d" %(len(y_test_subgroup),len(y_pred_subgroup)))
         sys.exit()
 
     overall_subgroup_f1_score = f1_score(y_test_subgroup, y_pred_subgroup, average='weighted')
     subgroup_report = classification_report(y_test_subgroup,y_pred_subgroup,labels=["normal","dos","r2l","u2r","probe"],output_dict=True) 
     
+    if("accuracy" in subgroup_report.keys()):
+        subgroup_report.pop("accuracy")
+
     return overall_f1_score, report, overall_binary_f1_score,binary_report,overall_subgroup_f1_score,subgroup_report
 
 #to make the skeleton
@@ -244,7 +257,7 @@ def make_report():
             col_names.append("Binary_%s_%s" %(avg,val)) 
 
     col_names.append("ATTACK SUBGROUP F1-SCORE")
-    for subgroup in ["dos","r2l","u2r","probe","normal"]:
+    for subgroup in ["dos","r2l","u2r","probe","normal","other"]:
         for val in ["precision","recall","f1-score","support"]: 
             col_names.append("Attack_Subgroup_%s_%s" %(subgroup,val)) 
     for avg in ["micro avg", "macro avg","weighted avg"]:
@@ -261,13 +274,14 @@ def test_best_algs():
     report = make_report()
 
     #bar_values = [None] * len(algorithms)
-    models_path = "param_search/saved_models/"
+    models_path = "../saved_models/"
     for root, dirs, files in os.walk(models_path):
         for name in files:
             if name.endswith(".joblib"):
                 #regex search for info from file name
-                info = re.findall("(?<=_)([^_]+)(?=_)", name)
-                alg_name = info[0]
+                #info = re.findall("(?<=_)([^_]+)(?=_)", name)
+                alg_name = name[5:-7]
+                print(alg_name)
                 clf = joblib.load(models_path + name) 
                 X, y = load_test_data()
                 print("Loaded %s%s" %(models_path,name))
@@ -276,21 +290,21 @@ def test_best_algs():
                 y_pred = clf.predict(X)
                 end_time = time.time() - start_time
                 overall_f1_score, overall_report, overall_binary_f1_score,binary_report,overall_subgroup_f1_score,subgroup_report = eval(y, y_pred)
-                report.loc["Best %s" % (alg_name), "OVERALL F1-SCORE"] = "%.6f" % overall_f1_score
-                report.loc["Best %s" % (alg_name), "BINARY F1-SCORE"] = "%.6f" % overall_binary_f1_score
-                report.loc["Best %s" % (alg_name), "ATTACK SUBGROUP F1-SCORE"] = "%.6f" % overall_subgroup_f1_score
-                report.loc["Best %s" % (alg_name), "PREDICTION TIME"] = "%.10f" % end_time
-                for k1,v1 in overall_report.iteritems():
-                    for k2,v2 in v1.iteritems():
-                            report.loc["Best %s" % (alg_name),"Overall_%s_%s" % (k1,k2)] = "%.6f" % v2
+                report.loc["Best %s " % (alg_name), "OVERALL F1-SCORE"] = "%.6f" % overall_f1_score
+                report.loc["Best %s " % (alg_name), "BINARY F1-SCORE"] = "%.6f" % overall_binary_f1_score
+                report.loc["Best %s " % (alg_name), "ATTACK SUBGROUP F1-SCORE"] = "%.6f" % overall_subgroup_f1_score
+                report.loc["Best %s " % (alg_name), "PREDICTION TIME"] = "%.10f" % end_time
+                for k1,v1 in overall_report.items():
+                    for k2,v2 in v1.items():
+                            report.loc["Best %s " % (alg_name),"Overall_%s_%s" % (k1,k2)] = "%.6f" % v2
 
-                for k1,v1 in binary_report.iteritems():
-                    for k2,v2 in v1.iteritems():
-                            report.loc["Best %s" % (alg_name),"Binary_%s_%s" % (k1,k2)] = "%.6f" % v2
+                for k1,v1 in binary_report.items():
+                    for k2,v2 in v1.items():
+                            report.loc["Best %s " % (alg_name),"Binary_%s_%s" % (k1,k2)] = "%.6f" % v2
 
-                for k1,v1 in subgroup_report.iteritems():
-                    for k2,v2 in v1.iteritems():
-                            report.loc["Best %s" % (alg_name),"Attack_Subgroup_%s_%s" % (k1,k2)] = "%.6f" % v2
+                for k1,v1 in subgroup_report.items():
+                    for k2,v2 in v1.items():
+                            report.loc["Best %s " % (alg_name),"Attack_Subgroup_%s_%s" % (k1,k2)] = "%.6f" % v2
 
     report.to_csv("Best_Model_Info.csv")
 #################################    

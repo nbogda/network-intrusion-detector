@@ -1,1 +1,6 @@
 ,Best Params,Refit Time,F1-Score
+Best Naive-Bayes ,{},3.102217,0.7513
+Best SGD_Classifier ,"{'max_iter': 100, 'alpha': 0.0001}",63.590623,0.9882
+Best kNN ,"{'p': 1, 'n_neighbors': 1}",7.7004199999999985,0.9994
+Best Decision_Tree ,"{'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt', 'criterion': 'entropy'}",55.645586,0.9991
+Best Random_Forest ,"{'n_estimators': 200, 'min_samples_split': 8, 'min_samples_leaf': 1, 'max_features': 'log2', 'criterion': 'entropy'}",7072.601820,0.9994
