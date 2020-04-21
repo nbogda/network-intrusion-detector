@@ -158,7 +158,7 @@ def eval(y_test, y_pred):
     #binary_overall_f1_score = f1_score(y_test, y_pred, average='binary',pos_label='normal')
 
     #DEBUGGING######
-    print(report)
+    #print(report)
     #######DEBUGGING#####
 
     y_test_binary = []
@@ -180,7 +180,7 @@ def eval(y_test, y_pred):
         sys.exit() 
 
     overall_binary_f1_score = f1_score(y_test_binary, y_pred_binary, average='weighted')
-    binary_report = classification_report(y_test_binary,y_pred_binary,target_names=["normal","attack"],output_dict=True)
+    binary_report = classification_report(y_test_binary,y_pred_binary,labels=["normal","attack"],output_dict=True)
 
     y_test_subgroup = []
     y_pred_subgroup = []
@@ -214,7 +214,7 @@ def eval(y_test, y_pred):
         sys.exit()
 
     overall_subgroup_f1_score = f1_score(y_test_subgroup, y_pred_subgroup, average='weighted')
-    subgroup_report = classification_report(y_test_subgroup,y_pred_subgroup,target_names=["normal","dos","r2l","u2r","probe"],output_dict=True) 
+    subgroup_report = classification_report(y_test_subgroup,y_pred_subgroup,labels=["normal","dos","r2l","u2r","probe"],output_dict=True) 
     
     return overall_f1_score, report, overall_binary_f1_score,binary_report,overall_subgroup_f1_score,subgroup_report
 
@@ -226,8 +226,31 @@ def make_report():
     for a in algorithms:
         name = "Best %s " % (a)
         row_names.append(name)
-    col_names = ["F1-Score","Binary F1-Score","Attack Subgroup F1-Score","Prediction Time"]
-    #col_names += ["RMSLE Month %d" % i for i in range(1, 13)]  TODO: Maybe use this for F1-Score for binary??
+
+    col_names = ["PREDICTION TIME","OVERALL F1-SCORE"]
+    for attack in test_labels:
+        for val in ["precision","recall","f1-score","support"]:
+            col_names.append("Overall_%s_%s" %(attack,val))
+    for avg in ["micro avg", "macro avg","weighted avg"]:
+        for val in ["precision","recall","f1-score","support"]: 
+            col_names.append("Overall_%s_%s" %(avg,val)) 
+
+    col_names.append("BINARY F1-SCORE")
+    for binary in ["attack","normal"]:
+        for val in ["precision","recall","f1-score","support"]: 
+            col_names.append("Binary_%s_%s" %(binary,val)) 
+    for avg in ["micro avg", "macro avg","weighted avg"]:
+        for val in ["precision","recall","f1-score","support"]: 
+            col_names.append("Binary_%s_%s" %(avg,val)) 
+
+    col_names.append("ATTACK SUBGROUP F1-SCORE")
+    for subgroup in ["dos","r2l","u2r","probe","normal"]:
+        for val in ["precision","recall","f1-score","support"]: 
+            col_names.append("Attack_Subgroup_%s_%s" %(subgroup,val)) 
+    for avg in ["micro avg", "macro avg","weighted avg"]:
+        for val in ["precision","recall","f1-score","support"]: 
+            col_names.append("Attack_Subgroup_%s_%s" %(avg,val)) 
+
     df = pd.DataFrame(None, index=[row_names], columns=col_names)
     return(df)
 
@@ -237,7 +260,7 @@ def test_best_algs():
     algorithms = ["kNN", "MLP", "Decision_Tree", "SGD_Classifier", "Random_Forest","Naive-Bayes"]
     report = make_report()
 
-    bar_values = [None] * len(algorithms)
+    #bar_values = [None] * len(algorithms)
     models_path = "param_search/saved_models/"
     for root, dirs, files in os.walk(models_path):
         for name in files:
@@ -252,14 +275,24 @@ def test_best_algs():
                 start_time = time.time()
                 y_pred = clf.predict(X)
                 end_time = time.time() - start_time
-                overall_f1_score, report, overall_binary_f1_score,binary_report,overall_subgroup_f1_score,subgroup_report = eval(y, y_pred)
-                report.loc["Best %s" % (alg_name), "F1-Score"] = "%.6f" % overall_f1_score
-                report.loc["Best %s" % (alg_name), "Binary F1-Score"] = "%.6f" % overall_binary_f1_score
-                report.loc["Best %s" % (alg_name), "Attack Subgroup F1-Score"] = "%.6f" % overall_subgroup_f1_score
-                report.loc["Best %s" % (alg_name), "Prediction Time"] = "%.10f" % end_time
-                                #for i in range(0, len(multiple)):
-                                    #report.loc["Best %s %s %s" % (alg_name, preprocess, clean_method), "RMSLE Month %s" % str(i + 1)] = "%.6f" % multiple[i]
-    report.to_csv("graphs/Best_Model_Info.csv")
+                overall_f1_score, overall_report, overall_binary_f1_score,binary_report,overall_subgroup_f1_score,subgroup_report = eval(y, y_pred)
+                report.loc["Best %s" % (alg_name), "OVERALL F1-SCORE"] = "%.6f" % overall_f1_score
+                report.loc["Best %s" % (alg_name), "BINARY F1-SCORE"] = "%.6f" % overall_binary_f1_score
+                report.loc["Best %s" % (alg_name), "ATTACK SUBGROUP F1-SCORE"] = "%.6f" % overall_subgroup_f1_score
+                report.loc["Best %s" % (alg_name), "PREDICTION TIME"] = "%.10f" % end_time
+                for k1,v1 in overall_report.iteritems():
+                    for k2,v2 in v1.iteritems():
+                            report.loc["Best %s" % (alg_name),"Overall_%s_%s" % (k1,k2)] = "%.6f" % v2
+
+                for k1,v1 in binary_report.iteritems():
+                    for k2,v2 in v1.iteritems():
+                            report.loc["Best %s" % (alg_name),"Binary_%s_%s" % (k1,k2)] = "%.6f" % v2
+
+                for k1,v1 in subgroup_report.iteritems():
+                    for k2,v2 in v1.iteritems():
+                            report.loc["Best %s" % (alg_name),"Attack_Subgroup_%s_%s" % (k1,k2)] = "%.6f" % v2
+
+    report.to_csv("Best_Model_Info.csv")
 #################################    
 
 if __name__ == "__main__":
