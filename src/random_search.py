@@ -7,14 +7,13 @@ import random as rand
 import sys
 import collections
 from sklearn.model_selection import cross_val_score
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVR
-from sklearn.neural_network import MLPRegressor
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.multioutput import MultiOutputRegressor
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.externals import joblib
 from itertools import combinations, combinations_with_replacement
@@ -124,17 +123,17 @@ def random_search_(algorithm, params, X, y, cm, pp, iters=20, jobs=5):
     '''
     clf = None
     if algorithm == "kNN":
-        clf = KNeighborsRegressor()
+        clf = KNeighborsClassifier()
     elif algorithm == "MLP":
         #closest to what we did in class
-        clf = MLPRegressor(solver="sgd")
+        clf = MLPClassifier(solver="sgd")
     elif algorithm == "Decision Tree":
-        clf = DecisionTreeRegressor()
+        clf = DecisionTreeClassifier()
     elif algorithm == "SVM":
         clf = SVR()
-        clf = MultiOutputRegressor(clf)
+        clf = MultiOutputClassifier(clf)
     elif algorithm == "Random Forest":
-        clf = RandomForestRegressor()
+        clf = RandomForestClassifier()
 
     custom_neg_MSLE = make_scorer(custom_scorer)
     random_search = RandomizedSearchCV(clf, param_distributions=params, n_iter=iters, n_jobs=jobs, 
