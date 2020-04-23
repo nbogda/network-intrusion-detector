@@ -1,0 +1,7 @@
+,Best Params,Refit Time,F1-Score
+Best Naive-Bayes ,{},2.1498,0.9732
+Best SGD_Classifier ,"{'max_iter': 1000, 'alpha': 0.0001}",5.017097,0.9901
+Best Decision_Tree ,"{'min_samples_split': 4, 'min_samples_leaf': 1, 'max_features': 'log2', 'criterion': 'entropy'}",20.632796,0.9992
+Best kNN ,"{'p': 1, 'n_neighbors': 1}",7.637253999999999,0.9996
+Best MLP ,"{'learning_rate_init': 0.001, 'hidden_layer_sizes': (10, 10, 10, 20, 20), 'batch_size': 200, 'alpha': 0.01, 'activation': 'tanh'}",674.696929,0.998
+Best Random_Forest ,"{'n_estimators': 50, 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'log2', 'criterion': 'entropy'}",651.185540,0.9996
