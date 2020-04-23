@@ -6,58 +6,39 @@ import os
 import random as rand
 import sys
 import collections
+import joblib
 from sklearn.model_selection import cross_val_score
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.svm import SVR
+from sklearn.linear_model import SGDClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.multioutput import MultiOutputClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.externals import joblib
 from itertools import combinations, combinations_with_replacement
-from sklearn.metrics import make_scorer, mean_squared_log_error
+from sklearn.metrics import make_scorer, f1_score
+from sklearn.preprocessing import StandardScaler 
 
 
 
 #Nasty lil dictionary used to determine which node will run which parmiganna combination
-jobs = {1:['kNN',0,0], 2:['kNN',0,1], 3:['kNN',1,0], 4:['kNN',1,1], 5:['kNN',2,0], 6:['kNN',2,1],
-	7:['MLP',0,0], 8:['MLP',0,1], 9:['MLP',1,0], 10:['MLP',1,1], 11:['MLP',2,0], 12:['MLP',2,1],
-	13:['Decision Tree',0,0], 14:['Decision Tree',0,1], 15:['Decision Tree',1,0], 16:['Decision Tree',1,1], 17:['Decision Tree',2,0], 18:['Decision Tree',2,1],
-	19:['SVM',0,0], 20:['SVM',0,1], 21:['SVM',1,0], 22:['SVM',1,1], 23:['SVM',2,0], 24:['SVM',2,1],
-	25:['Random Forest',0,0], 26:['Random Forest',0,1], 27:['Random Forest',1,0], 28:['Random Forest',1,1], 29:['Random Forest',2,0], 30:['Random Forest',2,1]}
+jobs = {1:'kNN', 2:'MLP', 3:'Decision_Tree', 4:'SGD_Classifier', 5:'Random_Forest', 6:'Naive-Bayes'}
 
 
 #function to read in the CSV files
-def read_CSV(clean_method, preprocessing):
+def read_npy():
     '''
-    clean_method : integer
-                   0 - deleted
-                   1 - mean
-                   2 - to_0
-    
-    preprocessing : integer
-                    0 - ORIGINAL
-                    1 - PCA
+    I chose to preprocess the data and write it to .npy files so that I wouldn't have
+    to do so while this program runs.
     '''
-    
-    file_paths = ["deleted", "mean", "to_0"]
-    file_name = ["ORIGINAL", "PCA"]
 
-    #print statement for my sanity
-    print("\nYou have selected NaN %s, with %s data\n" % (file_paths[clean_method], file_name[preprocessing]))
-
-    train = pd.read_csv("../../data/NAN_%s/%s_split_data_train.csv" % (file_paths[clean_method], file_name[preprocessing]))
- 
     #split data into predictions and predictors
-    X = [] #predictors training
-    y = [] #predictions training
-    
-    for index, row in train.iterrows():
-        y.append(list(row.iloc[1:13]))
-        X.append(list(row.iloc[13:]))
-        
+    X = np.load("../data/X_train_PCA.npy")
+    y = np.load("../data/y_train_PCA.npy")
+
+
+     
     return X, y
 
 def get_params(algorithm):
@@ -67,7 +48,7 @@ def get_params(algorithm):
     returns dict of params
     '''
     if algorithm == "kNN":
-        return { 'n_neighbors' : np.arange(1, 100, 5),
+        return { 'n_neighbors' : [1,11,25,69],
                  'p' : [1, 2, 3] } #different orders of minkowski distance. 1=manhattan, 2=euclidean
     elif algorithm == "MLP": 
         hidden_layers = MLP_structure()
@@ -76,29 +57,30 @@ def get_params(algorithm):
                  'learning_rate_init' : [0.001, 0.01, 0.1, 1, 5],
                  'batch_size' : [1, 10, 30, 200],
                  'activation' : ['logistic', 'relu', 'tanh']}
-    elif algorithm == "Decision Tree":
-        return { 'criterion' : ["mse", "friedman_mse", "mae"],
+    elif algorithm == "Decision_Tree":
+        return { 'criterion' : ["gini", "entropy"],
                  'min_samples_split' : [2, 4, 6, 8],
                  'min_samples_leaf' : [1, 2, 3, 4],
                  'max_features' : ["auto", "sqrt", "log2"] }
-    elif algorithm == "SVM":
-        return { 'estimator__kernel' : ['rbf', 'sigmoid', 'poly'],
-                 'estimator__gamma' : ['scale', 'auto'],
-                 'estimator__C' : [0.1, 1, 5, 10],
-                 'estimator__epsilon' : [0.1, 1, 5, 10] }
-    elif algorithm == "Random Forest":
-        return { 'n_estimators' : [10, 50, 100, 200, 500],
-                 'criterion' : ["mse", "friedman_mse", "mae"],
+    elif algorithm == "SGD_Classifier":
+        return { 'max_iter' : [100,1000,10000],
+                 'alpha' : [0.0001,0.001,0.01,0.1] }
+    elif algorithm == "Random_Forest":
+        return { 'n_estimators' : [10, 50, 100, 200],
+                 'criterion' : ["gini","entropy"],
                  'min_samples_split' : [2, 4, 6, 8],
                  'min_samples_leaf' : [1, 2, 3, 4],
                  'max_features' : ["auto", "sqrt", "log2"] }
+    elif algorithm == "Naive-Bayes":
+        return { }
+
 
 #this is just to handle exceptions
 def custom_scorer(y_true, y_pred):
     score = np.nan
     try:
         #keep this identical to original scoring method from sklearn
-        score = mean_squared_log_error(y_true, y_pred) * -1
+        score = f1_score(y_true, y_pred, average='weighted')
     except Exception:
         pass
     return score
@@ -115,7 +97,7 @@ def MLP_structure():
         structure += tuple(neuron_layer)
     return structure
 
-def random_search_(algorithm, params, X, y, cm, pp, iters=20, jobs=5):
+def random_search_(algorithm, params, X, y, iters=20, jobs=5):
     '''
     Testing the following algs: 
 
@@ -127,35 +109,34 @@ def random_search_(algorithm, params, X, y, cm, pp, iters=20, jobs=5):
     elif algorithm == "MLP":
         #closest to what we did in class
         clf = MLPClassifier(solver="sgd")
-    elif algorithm == "Decision Tree":
+    elif algorithm == "Decision_Tree":
         clf = DecisionTreeClassifier()
-    elif algorithm == "SVM":
-        clf = SVR()
-        clf = MultiOutputClassifier(clf)
-    elif algorithm == "Random Forest":
+    elif algorithm == "SGD_Classifier":
+        clf = SGDClassifier()
+    elif algorithm == "Random_Forest":
         clf = RandomForestClassifier()
-
+    elif algorithm == "Naive-Bayes":
+        clf = GaussianNB()
+        
     custom_neg_MSLE = make_scorer(custom_scorer)
     random_search = RandomizedSearchCV(clf, param_distributions=params, n_iter=iters, n_jobs=jobs, 
                                        scoring=custom_neg_MSLE, refit=True, verbose=2,cv=10)
-    random_search.fit(X, y)
-    #report(random_search.cv_results_)
 
-    file_paths = ["deleted", "mean", "to_0"]
-    file_name = ["ORIGINAL", "PCA"]
+    random_search.fit(X, y)
+#    report(random_search.cv_results_)
     
     #save the model
     best_estimator = random_search.best_estimator_
-    joblib.dump(best_estimator, "saved_models/best_%s_%s_%s.joblib" % (algorithm, file_name[pp], file_paths[cm]))
+    joblib.dump(best_estimator, "saved_models/best_%s.joblib" % (algorithm))
 
     #write info about the model
     info = pd.read_csv("saved_models/Random_Search_Info.csv", index_col=0)
     best_params = random_search.best_params_
     fit_time = random_search.refit_time_ 
-    best_score = np.sqrt(np.abs(random_search.best_score_))
-    info.loc["Best %s %s %s" % (algorithm, file_name[pp], file_paths[cm]), "Best Params"] = str(best_params)
-    info.loc["Best %s %s %s" % (algorithm, file_name[pp], file_paths[cm]), "Mean RMSLE"] = "%.4f" % best_score
-    info.loc["Best %s %s %s" % (algorithm, file_name[pp], file_paths[cm]), "Refit Time"] = "%.6f" % fit_time 
+    best_score = random_search.best_score_
+    info.loc["Best %s " % (algorithm), "Best Params"] = str(best_params)
+    info.loc["Best %s " % (algorithm), "F1-Score"] = "%.4f" % best_score
+    info.loc["Best %s " % (algorithm), "Refit Time"] = "%.6f" % fit_time 
     print(info)
     info.to_csv("saved_models/Random_Search_Info.csv")
 
@@ -168,8 +149,8 @@ def report(results, n_top=3):
             print("Model with rank: {0}".format(i))
 
             #except this part, this is the RMSLE score
-            print("Mean RMSLE: {0:.3f} (std: {1:.3f})"
-                  .format(np.sqrt(np.abs(results['mean_test_score'][candidate])),
+            print("F1-Score: {0:.3f} (std: {1:.3f})"
+                  .format(results['mean_test_score'][candidate],
                           results['std_test_score'][candidate]))
             print("Parameters: {0}".format(results['params'][candidate]))
             print("")
@@ -177,37 +158,26 @@ def report(results, n_top=3):
 
 if __name__ == "__main__":
  
-    '''
-    clean_method : integer
-                   0 - deleted
-                   1 - mean
-                   2 - to_0
-    
-    preprocessing : integer
-                    0 - ORIGINAL
-                    1 - PCA
-    '''
    # print(sys.argv)
     jobNo = int(sys.argv[1])     #For cluster
-    clean_method = jobs[jobNo][1]  #For cluster
-    preprocessing = jobs[jobNo][2]  #For cluster
 
     #read data from one of 6 datasets
-    X, y = read_CSV(clean_method, preprocessing)
+    X, y = read_npy()
 
     '''
     algorithm : string
                 - kNN
                 - MLP
-                - Decision Tree
-                - SVM  
-                - Random Forest
+                - Decision_Tree
+                - SGD_Classifier  
+                - Random_Forest
+                - Naive-Bayes
     '''
-    algorithm = jobs[jobNo][0]   #"MLP"
+    algorithm = jobs[jobNo]   #"MLP"
     
     #this is where the params to test are stored
     param_dict = get_params(algorithm)
 
     #this where the actual searching happens
-    random_search_(algorithm, param_dict, X, y, clean_method, preprocessing, iters=100, jobs=45)
+    random_search_(algorithm, param_dict, X, y, iters=1, jobs=5) #100, 30
    # print("Testing search with job params. Alg: %s, Clean Method: %d, Preprocessing: %d" %(jobs[jobNo][0],jobs[jobNo][1],jobs[jobNo][2]))
