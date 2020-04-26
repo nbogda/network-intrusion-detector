@@ -8,6 +8,7 @@ import random as rand
 import sys
 import collections
 import joblib
+import seaborn as sn
 from sklearn.model_selection import cross_val_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import SGDClassifier
@@ -18,7 +19,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
 from itertools import combinations, combinations_with_replacement
-from sklearn.metrics import make_scorer, f1_score
+from sklearn.metrics import make_scorer, f1_score, roc_curve, roc_auc_score, accuracy_score, confusion_matrix
 from sklearn.preprocessing import StandardScaler
 
 # for charlie's best models based on random_search_info.csv
@@ -65,6 +66,7 @@ def read_labels(data):
             test_label_dict[t] = 0
         test_label_dict[t] += 1
 
+    # count unseen
     for k in test_label_dict.keys():
         if k not in train_label_dict:
             train_label_dict[k] = 0
@@ -99,41 +101,104 @@ def plot_ROC(data, model_dict):
     test_labels = []
     
     # just curious
-    train_dict = {}
-    test_dict = {}
+    # train_dict = {}
+    # test_dict = {}
     
     for x in data[1]:
         if x != "normal":
-            x = "attack"
-        if x not in train_dict:
-            train_dict[x] = 0
-        train_dict[x] += 1
+             x = "attack"
+             # x = 1
+        #else:
+             # x = 0
+        # if x not in train_dict:
+            # train_dict[x] = 0
+        # train_dict[x] += 1
         train_labels.append(x)
 
     for x in data[3]:
         if x != "normal":
             x = "attack"
-        if x not in test_dict:
-            test_dict[x] = 0
-        test_dict[x] += 1
+            # x = 1
+        # else:
+            # x = 0
+        # if x not in test_dict:
+            # test_dict[x] = 0
+        # test_dict[x] += 1
         test_labels.append(x)
 
-    bin_attacks_list = pd.DataFrame([train_dict, test_dict], index=["Train", "Test"])
-    bin_attacks_list = bin_attacks_list.transpose().sort_values(by='Train', ascending=False)
+    # bin_attacks_list = pd.DataFrame([train_dict, test_dict], index=["Train", "Test"])
+    # bin_attacks_list = bin_attacks_list.transpose().sort_values(by='Train', ascending=False)
     # output csv file, this should go in report
-    bin_attacks_list.to_csv('graphs/binary_attacks_list.csv')
+    # bin_attacks_list.to_csv('graphs/binary_attacks_list.csv')
 
-    #for k, v in model_dict.items():
+    # go through all models and plot ROC curves
+    # fpr_tpr_auc = []
+    for k, v in model_dict.items():
+        y_pred_proba = None
+        model = v.fit(data[0], train_labels)
+        # try:
+        print("Predicting %s" % k)
+        y_pred = model.predict(data[2])
+        confusion_matrix_(test_labels, y_pred, k)
+            
+            # y_pred_proba = model.predict_proba(data[2])
+            
+        # except AttributeError as e:
+            # print("Failed, predicting %s" % k)
+            # y_pred_proba = model.decision_function(data[2])
+        
+        '''
+        if len(y_pred_proba.shape) > 1:
+            y_pred_proba = y_pred_proba[:, 1]
 
+        fpr, tpr, _ = roc_curve(test_labels, y_pred_proba)
+        roc_auc = roc_auc_score(test_labels, y_pred_proba)
+        fpr_tpr_auc.append([k, fpr, tpr, roc_auc])
+        '''
+    # ROC_curve(fpr_trp_auc)
+
+def confusion_matrix_(y_test, y_pred, k):
+    labels = np.unique(y_test)
+
+    print(y_pred)
+    f1 = f1_score(y_test, y_pred, pos_label="attack")
+
+    # get confusion matrix
+    cm = confusion_matrix(y_test, y_pred)
+    # cm = cm.astype('float')/cm.sum(axis=1)[:, np.newaxis]
+
+    fig, ax = plt.subplots(figsize=(9, 7))
+    sn.heatmap(cm, annot=True, ax=ax, fmt='g', cmap='Blues', linewidths=0.25, linecolor='black')
+    ax.set_xlabel('Predicted Labels', fontsize='large')
+    ax.set_ylabel('True Labels', fontsize='large')
+    ax.set_title("Confusion matrix for %s, F1 Score = %.4f" % (k, f1), fontsize='large')
+    ax.xaxis.set_ticklabels(labels, rotation='horizontal', fontsize='large')
+    ax.yaxis.set_ticklabels(labels, rotation='horizontal', fontsize='large')
+    plt.savefig("graphs/%s_confusion_matrix.png" % k)
+
+
+    
+def ROC_curve(fpr_tpr, auc):
+    # plot ROC curve
+    for d in fpr_tpr_auc:
+        plt.plot(d[1], d[2], label="%s, AUC = %.4f" % (d[0], d[3]))
+    plt.plot([0, 1], [0, 1], 'k--')  # random 
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.0])
+    plt.xlabel('False Positive')
+    plt.ylabel('True Positive')
+    plt.title('Best Models ROC Curve')
+    plt.legend()
+    plt.savefig('graphs/roc_curves.png')
 
 
 def main():
 
     model_dict = best_models()
     data = get_data()
-    attacks_list = read_labels(data)
+    # attacks_list = read_labels(data)
     plot_ROC(data, model_dict)
-
+    
 
 
 
