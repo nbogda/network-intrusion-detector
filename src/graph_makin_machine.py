@@ -43,11 +43,12 @@ def get_data():
     y_test = np.load("data_preprocessing/y_test_PCA.npy")
     return (X_train, y_train, X_test, y_test)
 
-# to binarize problem on my end for ROC curve
-# also to count how many new labels are present in test set
+# just counting the labels in train and test set
+# output table of labels
 def read_labels(data):
     train_label_dict = {}
     test_label_dict = {}
+    unseen = {}
 
     train_labels = data[1]
     test_labels = data[3]
@@ -67,17 +68,30 @@ def read_labels(data):
     for k in test_label_dict.keys():
         if k not in train_label_dict:
             train_label_dict[k] = 0
+            if 'not_in_train' not in unseen:
+                unseen['not_in_train'] = 0
+            unseen['not_in_train'] += test_label_dict[k]
+    
 
     # apparently the test set doesn't have some stuff thats in the training set
     for k in train_label_dict.keys():
         if k not in test_label_dict:
             test_label_dict[k] = 0
+            if 'not_in_test' not in unseen:
+                unseen['not_in_test'] = 0
+            unseen['not_in_test'] += train_label_dict[k]
+    
+    unseen_list = pd.DataFrame([unseen], index=["Instances of Attacks"])
+    unseen_list = unseen_list.transpose()
+    # output csv file, this should go in report
+    unseen_list.to_csv('graphs/unseen_attacks_list.csv')
 
     attacks_list = pd.DataFrame([train_label_dict, test_label_dict], index=["Train", "Test"])
     attacks_list = attacks_list.transpose().sort_values(by='Train', ascending=False)
     # output csv file, this should go in report
     attacks_list.to_csv('graphs/attacks_list.csv')
 
+# binarize labels and output counts
 # test accuracy of model and plot ROC curve
 def plot_ROC(data, model_dict):
 
@@ -103,7 +117,7 @@ def plot_ROC(data, model_dict):
             test_dict[x] = 0
         test_dict[x] += 1
         test_labels.append(x)
-    
+
     bin_attacks_list = pd.DataFrame([train_dict, test_dict], index=["Train", "Test"])
     bin_attacks_list = bin_attacks_list.transpose().sort_values(by='Train', ascending=False)
     # output csv file, this should go in report
