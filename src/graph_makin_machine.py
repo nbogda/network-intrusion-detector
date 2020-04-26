@@ -64,32 +64,61 @@ def read_labels(data):
             test_label_dict[t] = 0
         test_label_dict[t] += 1
 
-    # was jusr curious about isolating the new attacks
-    unseen_dict = {}
-
     for k in test_label_dict.keys():
         if k not in train_label_dict:
-            unseen_dict[k] = test_label_dict[k]
             train_label_dict[k] = 0
 
+    # apparently the test set doesn't have some stuff thats in the training set
     for k in train_label_dict.keys():
         if k not in test_label_dict:
             test_label_dict[k] = 0
 
     attacks_list = pd.DataFrame([train_label_dict, test_label_dict], index=["Train", "Test"])
     attacks_list = attacks_list.transpose().sort_values(by='Train', ascending=False)
+    # output csv file, this should go in report
     attacks_list.to_csv('graphs/attacks_list.csv')
+
+# test accuracy of model and plot ROC curve
+def plot_ROC(data, model_dict):
+
+    train_labels = []
+    test_labels = []
+    
+    # just curious
+    train_dict = {}
+    test_dict = {}
+    
+    for x in data[1]:
+        if x != "normal":
+            x = "attack"
+        if x not in train_dict:
+            train_dict[x] = 0
+        train_dict[x] += 1
+        train_labels.append(x)
+
+    for x in data[3]:
+        if x != "normal":
+            x = "attack"
+        if x not in test_dict:
+            test_dict[x] = 0
+        test_dict[x] += 1
+        test_labels.append(x)
+    
+    bin_attacks_list = pd.DataFrame([train_dict, test_dict], index=["Train", "Test"])
+    bin_attacks_list = bin_attacks_list.transpose().sort_values(by='Train', ascending=False)
+    # output csv file, this should go in report
+    bin_attacks_list.to_csv('graphs/binary_attacks_list.csv')
+
+    #for k, v in model_dict.items():
+
 
 
 def main():
 
     model_dict = best_models()
     data = get_data()
-    read_labels(data)
-
-
-
-
+    attacks_list = read_labels(data)
+    plot_ROC(data, model_dict)
 
 
 
