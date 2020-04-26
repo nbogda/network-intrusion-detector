@@ -10,7 +10,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 
-def split_train_test(data, pca=False):
+
+def read_data(data):
     '''
     Will return arrays of these sizes:
         X_train : (752494, 41)
@@ -25,19 +26,17 @@ def split_train_test(data, pca=False):
     X = StandardScaler().fit_transform(X)  # mean of ~0 and variance of 1
     # convert last column to list for labels
     y = np.array(data.iloc[:,-1].values.tolist())
+    return X, y
 
-    # pca is optional
-    desc = ""
-    if pca:
-        X = pca_data(X)
-        desc = "_PCA"
+# only call this on training set
+def PCA_train_test(X, y):
+    # pca is NOT optional
+    X, pca = pca_data(X)
+    desc = '_PCA'
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, test_size=0.3)
-    np.save("X_train%s.npy" % desc, X_train)
-    np.save("X_test%s.npy" % desc, X_test)
-    np.save("y_train%s.npy" % desc, y_train)
-    np.save("y_test%s.npy" % desc, y_test)
-    return X_train, X_test, y_train, y_test
+    np.save("X_train%s.npy" % desc, X)
+    np.save("y_train%s.npy" % desc, y)
+    return X, y, pca
 
 def pca_data(X):
     pca = PCA()
@@ -45,7 +44,7 @@ def pca_data(X):
 
     #get variance explained
     explained_variance = pca.explained_variance_ratio_
-
+    '''
     #make first plot of just principal components
     fig1 = plt.figure()
     plt.plot(explained_variance)
@@ -53,13 +52,14 @@ def pca_data(X):
     plt.ylabel("Percent of Variance Explained")
     plt.xlabel("Principal Component")
     plt.savefig("graphs/principal_comp_.png")
-
+    '''
     #select what percent var to keep
     desired_var = 0.9
     #select how many eigenvalues to keep
     cumsum = np.cumsum(explained_variance)
     k = np.argwhere(cumsum > desired_var)[0]
 
+    '''
     #make second plot of cum var explained
     fig2 = plt.figure()
     plt.plot(cumsum)
@@ -69,21 +69,29 @@ def pca_data(X):
     plt.ylabel("Cumulative Percent of Variance Explained")
     plt.xlabel("Principal Component")
     plt.savefig("graphs/var_exp_.png")
-
+    '''
     pca = PCA(n_components=int(k))
     X = pca.fit_transform(X)
-    return X
+
+    return X, pca
             
 
 def main():
 
-    # assume that if x_train doesn't exist, then none of the sets exist
-    pca = True
-    if (not os.path.exists('x_train.npy') and not pca) or (not os.path.exists("X_train_PCA.npy") and pca):
-    	data = pd.read_csv('../data/train_nodup.csv')
-    	X_train, X_test, y_train, y_test = split_train_test(data, pca=pca)
-        print("Transformed data")
+    # training data
+    data = pd.read_csv('../../data/train_nodup.csv')
+    X, y = read_data(data)
+    X, y, pca = PCA_train_test(X, y)
+    
+    # testing data
+    data = pd.read_csv("../../data/test_nodup.csv")
+    X, y = read_data(data)
+    X_test_pca = pca.fit_transform(X)
+    np.save("X_test_PCA.npy", X_test_pca)
+    np.save("y_test_PCA.npy", y)
+    
 
 if __name__ == "__main__":
     main()
+
 
