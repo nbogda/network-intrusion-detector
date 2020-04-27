@@ -49,10 +49,11 @@ def get_data():
 def read_labels(data):
     train_label_dict = {}
     test_label_dict = {}
-    unseen = {}
+    unseen = []
 
     train_labels = data[1]
     test_labels = data[3]
+    test_data = data[2]
 
     # count different train labels
     for t in train_labels:
@@ -61,20 +62,19 @@ def read_labels(data):
         train_label_dict[t] += 1
 
     # count different test labels
-    for t in test_labels:
+    for t, d in zip(test_labels, test_data):
         if t not in test_label_dict:
-            test_label_dict[t] = 0
-        test_label_dict[t] += 1
+            test_label_dict[t] = []
+        test_label_dict[t].append(d)
 
     # count unseen
     for k in test_label_dict.keys():
         if k not in train_label_dict:
-            train_label_dict[k] = 0
-            if 'not_in_train' not in unseen:
-                unseen['not_in_train'] = 0
-            unseen['not_in_train'] += test_label_dict[k]
+            for attack in test_label_dict[k]:
+                unseen.append(attack)
+    return unseen
     
-
+    '''
     # apparently the test set doesn't have some stuff thats in the training set
     for k in train_label_dict.keys():
         if k not in test_label_dict:
@@ -92,7 +92,7 @@ def read_labels(data):
     attacks_list = attacks_list.transpose().sort_values(by='Train', ascending=False)
     # output csv file, this should go in report
     attacks_list.to_csv('graphs/attacks_list.csv')
-
+    '''
 # binarize labels and output counts
 # test accuracy of model and plot ROC curve
 def plot_ROC(data, model_dict):
@@ -157,6 +157,36 @@ def plot_ROC(data, model_dict):
         '''
     # ROC_curve(fpr_trp_auc)
 
+def plot_unseen(model_dict, unseen, data):
+    
+    train_labels = []
+    accuracies = {}
+    
+    for x in data[1]:
+        if x != "normal":
+             x = "attack"
+        train_labels.append(x)
+
+    for k, v in model_dict.items():
+        y_pred_proba = None
+        model = v.fit(data[0], train_labels)
+        print("Predicting %s" % k)
+        y_pred = model.predict(unseen)
+        accuracy = (y_pred == "attack").sum()/len(y_pred) # % of attack predicted correctly
+        accuracies[k] = accuracy
+    
+    index = np.arange(len(accuracies.keys()))
+    fig = plt.figure(figsize=(9, 7))
+    plt.bar(index, accuracies.values())
+    plt.xlabel('Classifier')
+    plt.ylabel('Percent Correct')
+    plt.xticks(index, accuracies.keys())
+    plt.title('Percent of Unseen Attacks Correctly Identified (Total = 4,022)')
+    plt.savefig("graphs/unseen_predictions.png")
+
+    
+
+
 def confusion_matrix_(y_test, y_pred, k):
     labels = np.unique(y_test)
 
@@ -196,8 +226,9 @@ def main():
 
     model_dict = best_models()
     data = get_data()
-    # attacks_list = read_labels(data)
-    plot_ROC(data, model_dict)
+    unseen = read_labels(data)
+    plot_unseen(model_dict, unseen, data)
+    # plot_ROC(data, model_dict)
     
 
 
