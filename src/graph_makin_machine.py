@@ -184,28 +184,22 @@ def plot_unseen(model_dict, unseen, data):
     plt.title('Percent of Unseen Attacks Correctly Identified (Total = 4,022)')
     plt.savefig("graphs/unseen_predictions.png")
 
-    
-
 
 def confusion_matrix_(y_test, y_pred, k):
     labels = np.unique(y_test)
 
-    print(y_pred)
-    f1 = f1_score(y_test, y_pred, pos_label="attack")
-
     # get confusion matrix
     cm = confusion_matrix(y_test, y_pred)
-    # cm = cm.astype('float')/cm.sum(axis=1)[:, np.newaxis]
+    cm = cm.astype('float')/cm.sum(axis=1)[:, np.newaxis]
 
     fig, ax = plt.subplots(figsize=(9, 7))
-    sn.heatmap(cm, annot=True, ax=ax, fmt='g', cmap='Blues', linewidths=0.25, linecolor='black')
+    sn.heatmap(cm, annot=True, ax=ax, fmt='.2g', cmap='Blues', linewidths=0.25, linecolor='black')
     ax.set_xlabel('Predicted Labels', fontsize='large')
     ax.set_ylabel('True Labels', fontsize='large')
-    ax.set_title("Confusion matrix for %s, F1 Score = %.4f" % (k, f1), fontsize='large')
+    ax.set_title("Confusion matrix for %s" % k, fontsize='large')
     ax.xaxis.set_ticklabels(labels, rotation='horizontal', fontsize='large')
     ax.yaxis.set_ticklabels(labels, rotation='horizontal', fontsize='large')
     plt.savefig("graphs/%s_confusion_matrix.png" % k)
-
 
     
 def ROC_curve(fpr_tpr, auc):
@@ -226,11 +220,9 @@ def main():
 
     model_dict = best_models()
     data = get_data()
-    unseen = read_labels(data)
-    plot_unseen(model_dict, unseen, data)
-    # plot_ROC(data, model_dict)
-    
-
+    # unseen = read_labels(data)
+    # plot_unseen(model_dict, unseen, data)
+    plot_ROC(data, model_dict)
 
 
 if __name__ == "__main__":
