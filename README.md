@@ -1,4 +1,4 @@
-<p>Final project for CS560 Software Systems.</p>
+<p>Network Intrusion Detector</p>
 
 <p>Using a variety of machine learning techniques to create a network intrustion detector. </p>
 
